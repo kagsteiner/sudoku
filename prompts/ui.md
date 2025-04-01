@@ -32,6 +32,8 @@ Please write python code for a tk user interface that allows users to solve sudo
 
 Result: worked out of the box. That was stunning. It even had features I had not requested but that make sense; but its internal reasoning log showed that this was not just dumb copying of someone else's sudoku code but a conscious decision to include this code.
 
+Even more stunning: Gemini looked at the solver / generator code I had pasted into the prompt, and chose to pretty much ignore it and create its own generator / solver loosely based on the ideas from the code, but significantly different. Also worked out of the box, but really unexpected that a) it didn't need the clever code I came up with with the help of ChatGPT.
+
 
 Task: I noticed that it is clumsy to use the mouse to switch between final value and pencil notes.
 
