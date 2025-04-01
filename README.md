@@ -5,3 +5,5 @@ A nice little sudoku app in python written to see how far you get with current L
 Please note that it takes between a fraction of a second and several minutes to generate a new sudoku.
 
 *Re-build it* by looking into the prompts folder; they contain the 4 or so prompts that I was using to generate the code. This is actually the main purpose of having this on Github; maybe you're interested in those prompts, as I've been fairly successful with them.
+
+Please note: advanced_generator.py is the result of my session to create a nice solver. However, when creating the UI, gemini decided to pretty much ignore it and build its own solver / generator losely based on my ideas/code...
