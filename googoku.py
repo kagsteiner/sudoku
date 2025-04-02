@@ -349,10 +349,10 @@ class SudokuGUI:
 
     def _draw_all_cells(self):
         """Redraws the contents of all cells based on current state."""
-        self.canvas.delete("numbers") # Clear previous numbers
-        self.canvas.delete("notes")   # Clear previous notes
-        self.canvas.delete("highlight") # Clear previous highlights
-        self.canvas.delete("active_highlight") # Clear active highlight
+        self.canvas.delete("numbers")  # Clear previous numbers
+        self.canvas.delete("notes")    # Clear previous notes
+        self.canvas.delete("highlight")  # Clear previous highlights
+        self.canvas.delete("active_highlight")  # Clear active highlight
 
         for r in range(9):
             for c in range(9):
@@ -366,9 +366,8 @@ class SudokuGUI:
                     self.canvas.create_rectangle(x0, y0, x0 + self.cell_size, y0 + self.cell_size,
                                                  fill=self.color_highlight, outline="", tags="highlight")
                 elif self.active_cell == (r, c):
-                     self.canvas.create_rectangle(x0, y0, x0 + self.cell_size, y0 + self.cell_size,
+                    self.canvas.create_rectangle(x0, y0, x0 + self.cell_size, y0 + self.cell_size,
                                                  fill=self.color_active_cell, outline="", tags="active_highlight")
-
 
                 # Draw initial puzzle numbers (fixed)
                 if self.initial_board[r][c] != 0:
@@ -411,16 +410,25 @@ class SudokuGUI:
             col = x // self.cell_size
             row = y // self.cell_size
 
-            # Only allow selecting cells that are not part of the initial puzzle
-            if self.initial_board[row][col] == 0:
-                self.active_cell = (row, col)
-                self.status_var.set(f"Selected cell ({row+1}, {col+1}). Enter number or notes.")
+            # Check if the clicked cell is a pre-filled number
+            if self.initial_board[row][col] != 0:
+                self.active_cell = None  # Cannot select pre-filled cells
+                self.highlighted_cells = {(r, c) for r in range(9) for c in range(9)
+                                           if self.initial_board[r][c] == self.initial_board[row][col] or
+                                           self.user_values[r][c] == self.initial_board[row][col]}
+                self.status_var.set(f"Highlighted all cells with value {self.initial_board[row][col]}.")
             else:
-                self.active_cell = None # Cannot select fixed cells
-                self.status_var.set("Cannot modify initial puzzle numbers.")
+                # Handle user-modifiable cells
+                if self.initial_board[row][col] == 0:
+                    self.active_cell = (row, col)
+                    self.status_var.set(f"Selected cell ({row+1}, {col+1}). Enter number or notes.")
+                else:
+                    self.active_cell = None
+                    self.status_var.set("Cannot modify initial puzzle numbers.")
 
-            self._clear_highlights() # Clear validity highlights on click
-            self._draw_all_cells() # Redraw to show active cell highlight
+                self.highlighted_cells.clear()  # Clear highlights for user-modifiable cells
+
+            self._draw_all_cells()  # Redraw to show highlights or active cell
 
     def _key_press(self, event):
         """Handles number key presses and mode switching."""
@@ -597,11 +605,11 @@ class SudokuGUI:
             self._draw_all_cells()
 
     def check_current_validity(self):
-        """Checks if the current user entries violate Sudoku rules."""
+        """Checks if the current user entries violate Sudoku rules or if the board is unsolvable."""
         self._clear_highlights()
         current_board = self._get_current_board_state()
-        is_overall_valid = True
-        violation_found = False
+        has_illegal_entry = False
+        is_unsolvable = False
 
         for r in range(9):
             for c in range(9):
@@ -611,26 +619,33 @@ class SudokuGUI:
                     current_board[r][c] = 0
                     if not is_valid(current_board, r, c, num):
                         self.highlighted_cells.add((r, c))
-                        is_overall_valid = False
-                        violation_found = True
+                        has_illegal_entry = True
                     # Restore the number
                     current_board[r][c] = num
 
-        self._draw_all_cells() # Redraw to show highlights
+        # Check if the board is solvable
+        if not has_illegal_entry:
+            solved_board = solve_first(current_board)
+            if not solved_board:
+                is_unsolvable = True
 
-        if violation_found:
-            self.status_var.set("Invalid entries found (marked in red).")
+        self._draw_all_cells()  # Redraw to show highlights
+
+        if has_illegal_entry:
+            self.status_var.set("Board contains illegal entries (marked in red).")
+            self.status_label.configure(bg=self.color_highlight, fg='black')
+        elif is_unsolvable:
+            self.status_var.set("Board is valid but not solvable.")
             self.status_label.configure(bg=self.color_highlight, fg='black')
         else:
-             # Check if board is full
-             is_full = all(current_board[r][c] != 0 for r in range(9) for c in range(9))
-             if is_full:
-                 self.status_var.set("Board is full and valid according to rules!")
-                 self.status_label.configure(bg=self.color_valid, fg='black')
-                 # Optional: Add a check against the actual solution here if you store it
-             else:
-                 self.status_var.set("Current entries are valid according to Sudoku rules.")
-                 self.status_label.configure(bg=self.color_valid, fg='black')
+            # Check if board is full
+            is_full = all(current_board[r][c] != 0 for r in range(9) for c in range(9))
+            if is_full:
+                self.status_var.set("Board is full and valid according to rules!")
+                self.status_label.configure(bg=self.color_valid, fg='black')
+            else:
+                self.status_var.set("Current entries are valid and solvable.")
+                self.status_label.configure(bg=self.color_valid, fg='black')
 
 
     def restart_current_puzzle(self):
